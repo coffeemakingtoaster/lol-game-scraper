@@ -52,6 +52,10 @@ func (s *SummonerQueue) Run() {
 				break
 			}
 			db.SaveMatchToSqlite(matchData)
+			participants := fetcher.GetParticipantPUUIDFromMatch(matchData)
+			for _, puuid := range participants {
+				s.AddPuuidToQueue(puuid)
+			}
 			break
 		case puuid := <-s.PUUIDQueue:
 			if len(s.MatchQueue) > (cap(s.MatchQueue) - 25) {

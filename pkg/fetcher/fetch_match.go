@@ -44,12 +44,10 @@ func FetchMatchesByUserPUUID(puuid string) ([]string, error) {
 	return *matchIds, nil
 }
 
-func GetParticipantPUUIDFromMatch(match types.MatchData, excludePUUID string) []string {
+func GetParticipantPUUIDFromMatch(match types.MatchData) []string {
 	res := []string{}
 	for _, participant := range match.Info.Participants {
-		if participant.Puuid != excludePUUID {
-			res = append(res, participant.Puuid)
-		}
+		res = append(res, participant.Puuid)
 	}
 	return res
 }
