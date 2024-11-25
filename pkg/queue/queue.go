@@ -41,7 +41,10 @@ func (s *SummonerQueue) AddPuuidToQueue(puuid string) {
 	}
 
 	// TODO: Check if summoner has been fetched by other instance
-	s.PUUIDQueue <- puuid
+	success := db.MarkPUUIDDone(puuid)
+	if success {
+		s.PUUIDQueue <- puuid
+	}
 }
 
 func (s *SummonerQueue) Run() {
