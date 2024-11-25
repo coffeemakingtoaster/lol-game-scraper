@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/coffeemakingtoaster/lol-game-scraper/pkg/db"
@@ -56,7 +57,9 @@ func (s *SummonerQueue) Run() {
 	for {
 		// Check if queries are empty even though the queue should be ready for processing
 		if (len(s.PUUIDQueue)+len(s.MatchQueue) == 0) && s.IsReady {
-			panic("All Queues Empty! Scraper has run dry :c")
+			fmt.Println("All Queues Empty! Scraper has run dry")
+			fmt.Printf("Saved %d from %d summoners!\n", s.SavedMatches, s.QueriedSummoners)
+			os.Exit(1)
 		}
 		select {
 		case matchId := <-s.MatchQueue:
