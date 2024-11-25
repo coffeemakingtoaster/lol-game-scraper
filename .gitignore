@@ -68,3 +68,4 @@ tags
 .env
 data
 main
+.DS_Store
