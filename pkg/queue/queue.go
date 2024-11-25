@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/coffeemakingtoaster/lol-game-scraper/pkg/db"
@@ -8,9 +9,10 @@ import (
 )
 
 type SummonerQueue struct {
-	status     string
-	MatchQueue chan string
-	PUUIDQueue chan string
+	MatchQueue       chan string
+	PUUIDQueue       chan string
+	SavedMatches     int
+	QueriedSummoners int
 }
 
 func New() *SummonerQueue {
@@ -19,6 +21,8 @@ func New() *SummonerQueue {
 	sq.MatchQueue = make(chan string, 500)
 	// 500 summoner slots in the queue
 	sq.PUUIDQueue = make(chan string, 500)
+	sq.SavedMatches = 0
+	sq.QueriedSummoners = 0
 	return sq
 }
 
@@ -26,6 +30,7 @@ func New() *SummonerQueue {
 func (s *SummonerQueue) AddRiotAccToQueue(user_name string, user_tag string) {
 	user := fetcher.FetchSummoner(user_name, user_tag)
 	s.AddPuuidToQueue(user.PUUID)
+	fmt.Printf("Initial user %s#%s to queue\n", user_name, user_tag)
 }
 
 func (s *SummonerQueue) AddPuuidToQueue(puuid string) {
@@ -51,7 +56,14 @@ func (s *SummonerQueue) Run() {
 				s.MatchQueue <- matchId
 				break
 			}
-			db.SaveMatchToSqlite(matchData)
+			saved := db.SaveMatchToSqlite(matchData)
+			if saved {
+				s.SavedMatches++
+
+				if s.SavedMatches%10 == 0 {
+					fmt.Printf("Saved %d from %d summoners!\n", s.SavedMatches, s.QueriedSummoners)
+				}
+			}
 			participants := fetcher.GetParticipantPUUIDFromMatch(matchData)
 			for _, puuid := range participants {
 				s.AddPuuidToQueue(puuid)
@@ -59,7 +71,6 @@ func (s *SummonerQueue) Run() {
 			break
 		case puuid := <-s.PUUIDQueue:
 			if len(s.MatchQueue) > (cap(s.MatchQueue) - 25) {
-				// dont do anything
 				break
 			}
 
@@ -72,6 +83,8 @@ func (s *SummonerQueue) Run() {
 				s.AddPuuidToQueue(puuid)
 				break
 			}
+
+			s.QueriedSummoners++
 
 			for _, id := range matchIds {
 				s.MatchQueue <- id

@@ -1,11 +1,16 @@
 package fetcher
 
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+)
+
 const API_BASE = "https://europe.api.riotgames.com/"
 
 var api_key string
 
 func init() {
-	// TODO: this is not implemented properly yet
-	// Copy and paste your key here
-	api_key = ""
+	godotenv.Load()
+	api_key = os.Getenv("RIOT_API_KEY")
 }

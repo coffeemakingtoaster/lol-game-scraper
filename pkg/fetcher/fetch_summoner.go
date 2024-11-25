@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/coffeemakingtoaster/lol-game-scraper/pkg/types"
 )
@@ -23,6 +24,6 @@ func FetchSummoner(user_name string, user_tagline string) types.AccountResponse 
 	}
 	target := new(types.AccountResponse)
 	json.NewDecoder(res.Body).Decode(target)
-	fmt.Printf("Client puuid: %s\n", target.PUUID)
+	time.Sleep(1 * time.Second)
 	return *target
 }
