@@ -49,7 +49,7 @@ func SaveMatchToSqlite(match types.MatchData) bool {
 func saveMatchToSqlite(db *sql.DB, match types.MatchData) bool {
 
 	// Check if this is a relevant game
-	if match.Info.gameMode == "ARAM" || match.Info.gameType != "MATCHED_GAME" {
+	if match.Info.GameMode == "ARAM" || match.Info.GameType != "MATCHED_GAME" {
 		return false
 	}
 
