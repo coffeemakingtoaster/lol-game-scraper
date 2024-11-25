@@ -13,6 +13,7 @@ type SummonerQueue struct {
 	PUUIDQueue       chan string
 	SavedMatches     int
 	QueriedSummoners int
+	IsReady          bool
 }
 
 func New() *SummonerQueue {
@@ -23,32 +24,40 @@ func New() *SummonerQueue {
 	sq.PUUIDQueue = make(chan string, 500)
 	sq.SavedMatches = 0
 	sq.QueriedSummoners = 0
+	sq.IsReady = false
 	return sq
 }
 
 // This should only be used once as all fetched participants of games already contain the PUUID
 func (s *SummonerQueue) AddRiotAccToQueue(user_name string, user_tag string) {
 	user := fetcher.FetchSummoner(user_name, user_tag)
-	s.AddPuuidToQueue(user.PUUID)
+	success := s.AddPuuidToQueue(user.PUUID)
+	if !success {
+		panic("Entryuser could not be added! This likely means that it has been fetched by another instance")
+	}
 	fmt.Printf("Initial user %s#%s to queue\n", user_name, user_tag)
+	s.IsReady = true
 }
 
-func (s *SummonerQueue) AddPuuidToQueue(puuid string) {
+func (s *SummonerQueue) AddPuuidToQueue(puuid string) bool {
 	// Buffer of 5 just to make sure
 	if len(s.PUUIDQueue) > (cap(s.PUUIDQueue) - 5) {
-		// dont do anything
-		return
+		return false
 	}
 
-	// TODO: Check if summoner has been fetched by other instance
 	success := db.MarkPUUIDDone(puuid)
 	if success {
 		s.PUUIDQueue <- puuid
 	}
+	return success
 }
 
 func (s *SummonerQueue) Run() {
 	for {
+		// Check if queries are empty even though the queue should be ready for processing
+		if (len(s.PUUIDQueue)+len(s.MatchQueue) == 0) && s.IsReady {
+			panic("All Queues Empty! Scraper has run dry :c")
+		}
 		select {
 		case matchId := <-s.MatchQueue:
 			matchData, err := fetcher.FetchMatchById(matchId)
