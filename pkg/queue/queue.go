@@ -21,8 +21,8 @@ func New() *SummonerQueue {
 	sq := new(SummonerQueue)
 	// 500 match slots in the queue
 	sq.MatchQueue = make(chan string, 500)
-	// 500 summoner slots in the queue
-	sq.PUUIDQueue = make(chan string, 500)
+	// 50 summoner slots in the queue
+	sq.PUUIDQueue = make(chan string, 30)
 	sq.SavedMatches = 0
 	sq.QueriedSummoners = 0
 	sq.IsReady = false
@@ -63,6 +63,9 @@ func (s *SummonerQueue) Run() {
 		}
 		select {
 		case matchId := <-s.MatchQueue:
+			if db.IsMatchIDInSqlite(matchId) {
+				break
+			}
 			matchData, err := fetcher.FetchMatchById(matchId)
 			// This means something went wrong. This is most likely due to the rate limit
 			// therefore we will wait for a while and then try again later

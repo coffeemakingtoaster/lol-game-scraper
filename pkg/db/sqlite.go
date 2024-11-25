@@ -46,11 +46,34 @@ func SaveMatchToSqlite(match types.MatchData) bool {
 	return saveMatchToSqlite(getSqliteConn(), match)
 }
 
+func IsMatchIDInSqlite(matchId string) bool {
+	return isMatchIDInSqlite(getSqliteConn(), matchId)
+}
+
+func isMatchIDInSqlite(db *sql.DB, matchId string) bool {
+	// Define the query to check if the match ID exists
+	query := "SELECT COUNT(1) FROM matches WHERE id = ?"
+
+	var count int
+
+	// Execute the query with the provided match ID
+	err := db.QueryRow(query, matchId).Scan(&count)
+	if err != nil {
+		log.Printf("Error querying the database: %v\n", err)
+		return false
+	}
+
+	// Return true if the count is greater than 0
+	return count > 0
+}
+
 func saveMatchToSqlite(db *sql.DB, match types.MatchData) bool {
+
+	isRelevant := 1
 
 	// Check if this is a relevant game
 	if match.Info.GameMode == "ARAM" || match.Info.GameType != "MATCHED_GAME" {
-		return false
+		isRelevant = 0
 	}
 
 	matchID := match.Metadata.MatchID
@@ -62,8 +85,8 @@ func saveMatchToSqlite(db *sql.DB, match types.MatchData) bool {
 	}
 
 	// Insert JSON data with a custom string ID into the database
-	insertSQL := `INSERT INTO matches (id, data) VALUES (?, ?)`
-	_, err = db.Exec(insertSQL, matchID, string(jsonData))
+	insertSQL := `INSERT INTO matches (id, data, is_relevant) VALUES (?, ?, ?)`
+	_, err = db.Exec(insertSQL, matchID, string(jsonData), isRelevant)
 	if err != nil {
 		// Check if the error is a unique constraint violation
 		if !strings.Contains(fmt.Sprint(err), "UNIQUE") {
@@ -71,5 +94,5 @@ func saveMatchToSqlite(db *sql.DB, match types.MatchData) bool {
 		}
 		return false
 	}
-	return true
+	return isRelevant == 1
 }

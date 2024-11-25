@@ -23,7 +23,6 @@ func FetchMatchById(id string) (types.MatchData, error) {
 		if res.StatusCode == http.StatusUnauthorized {
 			panic(err)
 		}
-		fmt.Printf("Match fetch status error: %d", res.StatusCode)
 		return types.MatchData{}, errors.New("Unexpected response code")
 	}
 	target := new(types.MatchData)
