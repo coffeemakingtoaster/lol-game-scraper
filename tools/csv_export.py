@@ -7,6 +7,10 @@ import shutil
 TMP_DB = "./tmp.db"
 
 # merge dbs
+try:
+    os.remove(TMP_DB)
+except:
+    pass
 
 db_files = []
 
@@ -19,6 +23,7 @@ if len(db_files) == 0:
     exit(1)
 
 shutil.copyfile(db_files[0], TMP_DB)
+print(f"{db_files[0]} as base")
 
 con = sqlite3.connect(TMP_DB)
 
@@ -26,6 +31,7 @@ cur = con.cursor()
 
 for i in range(1, len(db_files)):
     file = db_files[i]
+    print(f"Merging {file}")
     copy_conn = sqlite3.connect(file)
     copy_cursor = copy_conn.cursor()
     copy_cursor.execute("SELECT * FROM matches WHERE is_relevant IS TRUE")
